@@ -1,0 +1,232 @@
+package pl.edu.wat.wcy.edp.bd.formulino.dao;
+
+import org.sql2o.Connection;
+import org.sql2o.Sql2o;
+import pl.edu.wat.wcy.edp.bd.formulino.model.Circuit;
+import pl.edu.wat.wcy.edp.bd.formulino.model.Race;
+import pl.edu.wat.wcy.edp.bd.formulino.model.Location;
+
+import java.util.List;
+
+public class RaceDAO {
+    private final Sql2o sql2o;
+
+    public RaceDAO(Sql2o sql2o) {
+        this.sql2o = sql2o;
+    }
+
+    /**
+     * Save a Race with its Circuit and Location to the database
+     */
+    public void saveRace(Race race) {
+        try (Connection conn = sql2o.beginTransaction()) {
+            if (race.getCircuit() != null && race.getCircuit().getLocation() != null) {
+                saveLocation(conn, race.getCircuit().getLocation());
+
+                saveCircuit(conn, race.getCircuit());
+            }
+
+            String insertRaceSql = """
+                INSERT OR IGNORE INTO races (season, round, url, race_name, date, time, circuit_id)
+                VALUES (:season, :round, :url, :raceName, :date, :time, :circuitId)
+                """;
+
+            conn.createQuery(insertRaceSql)
+                    .addParameter("season", race.getSeason())
+                    .addParameter("round", race.getRound())
+                    .addParameter("url", race.getUrl())
+                    .addParameter("raceName", race.getRaceName())
+                    .addParameter("date", race.getDate())
+                    .addParameter("time", race.getTime())
+                    .addParameter("circuitId", race.getCircuit() != null ? race.getCircuit().getCircuitId() : null)
+                    .executeUpdate();
+
+            conn.commit();
+        }
+    }
+
+    /**
+     * Save Location to database
+     */
+    private void saveLocation(Connection conn, Location location) {
+        String insertLocationSql = """
+            INSERT INTO locations (lat, longitude, locality, country)
+            VALUES (:lat, :longitude, :locality, :country)
+            ON CONFLICT (locality, country) DO NOTHING
+            """;
+
+        conn.createQuery(insertLocationSql)
+                .addParameter("lat", location.getLat())
+                .addParameter("longitude", location.getLongitude())
+                .addParameter("locality", location.getLocality())
+                .addParameter("country", location.getCountry())
+                .executeUpdate();
+    }
+
+    /**
+     * Save Circuit to database
+     */
+    private void saveCircuit(Connection conn, Circuit circuit) {
+        String insertCircuitSql = """
+            INSERT INTO circuits (circuit_id, url, circuit_name, locality, country)
+            VALUES (:circuitId, :url, :circuitName, :locality, :country)
+            ON CONFLICT (circuit_id) DO UPDATE SET
+                url = EXCLUDED.url,
+                circuit_name = EXCLUDED.circuit_name,
+                locality = EXCLUDED.locality,
+                country = EXCLUDED.country
+            """;
+
+        Location location = circuit.getLocation();
+        conn.createQuery(insertCircuitSql)
+                .addParameter("circuitId", circuit.getCircuitId())
+                .addParameter("url", circuit.getUrl())
+                .addParameter("circuitName", circuit.getCircuitName())
+                .addParameter("locality", location != null ? location.getLocality() : null)
+                .addParameter("country", location != null ? location.getCountry() : null)
+                .executeUpdate();
+    }
+
+    /**
+     * Find race by season and round
+     */
+    public Race findRace(String season, String round) {
+        String sql = """
+            SELECT r.season, r.round, r.url, r.race_name as raceName, r.date, r.time,
+                   c.circuit_id as circuitId, c.url as circuitUrl, c.circuit_name as circuitName,
+                   l.lat, l.longitude, l.locality, l.country
+            FROM races r
+            LEFT JOIN circuits c ON r.circuit_id = c.circuit_id
+            LEFT JOIN locations l ON c.locality = l.locality AND c.country = l.country
+            WHERE r.season = :season AND r.round = :round
+            """;
+
+        try (Connection conn = sql2o.open()) {
+            List<RaceResult> results = conn.createQuery(sql)
+                    .addParameter("season", season)
+                    .addParameter("round", round)
+                    .executeAndFetch(RaceResult.class);
+
+            if (results.isEmpty()) {
+                return null;
+            }
+
+            return mapToRace(results.get(0));
+        }
+    }
+
+    /**
+     * Find all races for a season
+     */
+    public List<Race> findRacesBySeason(String season) {
+        String sql = """
+            SELECT r.season, r.round, r.url, r.race_name as raceName, r.date, r.time,
+                   c.circuit_id as circuitId, c.url as circuitUrl, c.circuit_name as circuitName,
+                   l.lat, l.longitude, l.locality, l.country
+            FROM races r
+            LEFT JOIN circuits c ON r.circuit_id = c.circuit_id
+            LEFT JOIN locations l ON c.locality = l.locality AND c.country = l.country
+            WHERE r.season = :season
+            ORDER BY CAST(r.round AS INTEGER)
+            """;
+
+        try (Connection conn = sql2o.open()) {
+            List<RaceResult> results = conn.createQuery(sql)
+                    .addParameter("season", season)
+                    .executeAndFetch(RaceResult.class);
+
+            return results.stream()
+                    .map(this::mapToRace)
+                    .toList();
+        }
+    }
+
+    /**
+     * Helper method to map database result to Race object
+     */
+    private Race mapToRace(RaceResult result) {
+        Race race = new Race();
+        race.setSeason(result.getSeason());
+        race.setRound(result.getRound());
+        race.setUrl(result.getUrl());
+        race.setRaceName(result.getRaceName());
+        race.setDate(result.getDate());
+        race.setTime(result.getTime());
+
+        if (result.getCircuitId() != null) {
+            Circuit circuit = new Circuit();
+            circuit.setCircuitId(result.getCircuitId());
+            circuit.setUrl(result.getCircuitUrl());
+            circuit.setCircuitName(result.getCircuitName());
+
+            if (result.getLocality() != null) {
+                Location location = new Location();
+                location.setLat(result.getLat());
+                location.setLongitude(result.getLongitude());
+                location.setLocality(result.getLocality());
+                location.setCountry(result.getCountry());
+                circuit.setLocation(location);
+            }
+
+            race.setCircuit(circuit);
+        }
+
+        return race;
+    }
+
+    private static class RaceResult {
+        private String season;
+        private String round;
+        private String url;
+        private String raceName;
+        private String date;
+        private String time;
+        private String circuitId;
+        private String circuitUrl;
+        private String circuitName;
+        private String lat;
+        private String longitude;
+        private String locality;
+        private String country;
+
+        // Getters and setters
+        public String getSeason() { return season; }
+        public void setSeason(String season) { this.season = season; }
+
+        public String getRound() { return round; }
+        public void setRound(String round) { this.round = round; }
+
+        public String getUrl() { return url; }
+        public void setUrl(String url) { this.url = url; }
+
+        public String getRaceName() { return raceName; }
+        public void setRaceName(String raceName) { this.raceName = raceName; }
+
+        public String getDate() { return date; }
+        public void setDate(String date) { this.date = date; }
+
+        public String getTime() { return time; }
+        public void setTime(String time) { this.time = time; }
+
+        public String getCircuitId() { return circuitId; }
+        public void setCircuitId(String circuitId) { this.circuitId = circuitId; }
+
+        public String getCircuitUrl() { return circuitUrl; }
+        public void setCircuitUrl(String circuitUrl) { this.circuitUrl = circuitUrl; }
+
+        public String getCircuitName() { return circuitName; }
+        public void setCircuitName(String circuitName) { this.circuitName = circuitName; }
+
+        public String getLat() { return lat; }
+        public void setLat(String lat) { this.lat = lat; }
+
+        public String getLongitude() { return longitude; }
+        public void setLongitude(String longitude) { this.longitude = longitude; }
+
+        public String getLocality() { return locality; }
+        public void setLocality(String locality) { this.locality = locality; }
+
+        public String getCountry() { return country; }
+        public void setCountry(String country) { this.country = country; }
+    }
+}
