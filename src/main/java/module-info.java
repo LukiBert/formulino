@@ -10,7 +10,9 @@ module pl.edu.wat.wcy.edp.bd.formulino.formulino {
 
 
     opens pl.edu.wat.wcy.edp.bd.formulino to javafx.fxml;
-    exports pl.edu.wat.wcy.edp.bd.formulino;
-    opens pl.edu.wat.wcy.edp.bd.formulino.model to com.fasterxml.jackson.databind;
+    opens pl.edu.wat.wcy.edp.bd.formulino.controller to javafx.fxml;
+    opens pl.edu.wat.wcy.edp.bd.formulino.model to com.fasterxml.jackson.databind, javafx.base;
     opens pl.edu.wat.wcy.edp.bd.formulino.dao to sql2o;
+
+    exports pl.edu.wat.wcy.edp.bd.formulino;
 }

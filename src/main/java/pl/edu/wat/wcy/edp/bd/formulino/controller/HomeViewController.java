@@ -17,22 +17,16 @@ public class HomeViewController implements Initializable {
 
     @FXML
     private TableView<Race> racesTableView;
-
     @FXML
     private TableColumn<Race, String> roundColumn;
-
     @FXML
     private TableColumn<Race, String> raceNameColumn;
-
     @FXML
     private TableColumn<Race, String> dateColumn;
-
     @FXML
     private TableColumn<Race, String> timeColumn;
-
     @FXML
     private TableColumn<Race, String> circuitNameColumn;
-
     @FXML
     private Button refreshButton;
 
@@ -45,7 +39,6 @@ public class HomeViewController implements Initializable {
     @Override
     public void initialize(URL location, ResourceBundle resources) {
         setupTableColumns();
-        loadRaces();
     }
 
     private void setupTableColumns() {
@@ -109,5 +102,12 @@ public class HomeViewController implements Initializable {
         alert.setHeaderText(null);
         alert.setContentText(message);
         alert.showAndWait();
+    }
+
+    public void setRaceDao(RaceDAO raceDao) {
+        this.raceDao = raceDao;
+        if (raceDao != null) {
+            loadRaces();
+        }
     }
 }

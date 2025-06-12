@@ -81,7 +81,7 @@
                         <id>default-cli</id>
                         <configuration>
                             <mainClass>
-                                pl.edu.wat.wcy.edp.bd.formulino.formulino/pl.edu.wat.wcy.edp.bd.formulino.HelloApplication
+                                pl.edu.wat.wcy.edp.bd.formulino.formulino/pl.edu.wat.wcy.edp.bd.formulino.MainApplication
                             </mainClass>
                             <launcher>app</launcher>
                             <jlinkZipName>app</jlinkZipName>

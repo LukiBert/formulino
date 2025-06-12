@@ -4,6 +4,7 @@ import com.fasterxml.jackson.annotation.*;
 
 import java.time.LocalDate;
 import java.time.LocalTime;
+import java.util.List;
 
 @JsonIgnoreProperties(ignoreUnknown = true)
 public class Race {
@@ -16,6 +17,12 @@ public class Race {
 
     @JsonProperty("Circuit")
     private Circuit circuit;
+
+    @JsonProperty("Laps")
+    private List<LapData> laps;
+
+    public List<LapData> getLaps() { return laps; }
+    public void setLaps(List<LapData> laps) { this.laps = laps; }
 
     // Getters and setters
     public String getSeason() { return season; }

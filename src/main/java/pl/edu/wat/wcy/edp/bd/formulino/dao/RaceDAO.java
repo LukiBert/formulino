@@ -5,6 +5,7 @@ import org.sql2o.Sql2o;
 import pl.edu.wat.wcy.edp.bd.formulino.model.Circuit;
 import pl.edu.wat.wcy.edp.bd.formulino.model.Race;
 import pl.edu.wat.wcy.edp.bd.formulino.model.Location;
+import pl.edu.wat.wcy.edp.bd.formulino.model.Driver;
 
 import java.util.List;
 
@@ -13,6 +14,51 @@ public class RaceDAO {
 
     public RaceDAO(Sql2o sql2o) {
         this.sql2o = sql2o;
+    }
+
+    public void saveDriver(Driver driver) {
+        String sql = """
+            INSERT OR IGNORE INTO drivers (driver_id, url, given_name, family_name, date_of_birth, nationality, permanent_number, code)
+            VALUES (:driverId, :url, :givenName, :familyName, :dateOfBirth, :nationality, :permanentNumber, :code)
+            ON CONFLICT (driver_id) DO UPDATE SET
+                url = EXCLUDED.url,
+                given_name = EXCLUDED.given_name,
+                family_name = EXCLUDED.family_name,
+                date_of_birth = EXCLUDED.date_of_birth,
+                nationality = EXCLUDED.nationality,
+                permanent_number = EXCLUDED.permanent_number,
+                code = EXCLUDED.code
+            """;
+
+        try (Connection conn = sql2o.open()) {
+            conn.createQuery(sql)
+                    .addParameter("driverId", driver.getDriverId())
+                    .addParameter("url", driver.getUrl())
+                    .addParameter("givenName", driver.getGivenName())
+                    .addParameter("familyName", driver.getFamilyName())
+                    .addParameter("dateOfBirth", driver.getDateOfBirth())
+                    .addParameter("nationality", driver.getNationality())
+                    .addParameter("permanentNumber", driver.getPermanentNumber())
+                    .addParameter("code", driver.getCode())
+                    .executeUpdate();
+        }
+    }
+
+    public List<Driver> getAllDrivers() {
+        String sql = """
+            SELECT driver_id as driverId, url, given_name as givenName, family_name as familyName,
+                   date_of_birth as dateOfBirth, nationality, permanent_number as permanentNumber, code
+            FROM drivers
+            ORDER BY permanent_number
+            """;
+
+        try (Connection conn = sql2o.open()) {
+            List<DriverResult> results = conn.createQuery(sql).executeAndFetch(DriverResult.class);
+
+            return results.stream()
+                    .map(this::mapToDriver)
+                    .toList();
+        }
     }
 
     /**
@@ -174,6 +220,19 @@ public class RaceDAO {
         return race;
     }
 
+    private Driver mapToDriver(DriverResult result) {
+        Driver driver = new Driver();
+        driver.setDriverId(result.getDriverId());
+        driver.setUrl(result.getUrl());
+        driver.setGivenName(result.getGivenName());
+        driver.setFamilyName(result.getFamilyName());
+        driver.setDateOfBirth(result.getDateOfBirth());
+        driver.setNationality(result.getNationality());
+        driver.setPermanentNumber(result.getPermanentNumber());
+        driver.setCode(result.getCode());
+        return driver;
+    }
+
     private static class RaceResult {
         private String season;
         private String round;
@@ -228,5 +287,41 @@ public class RaceDAO {
 
         public String getCountry() { return country; }
         public void setCountry(String country) { this.country = country; }
+    }
+
+    private static class DriverResult {
+        private String driverId;
+        private String url;
+        private String givenName;
+        private String familyName;
+        private String dateOfBirth;
+        private String nationality;
+        private String permanentNumber;
+        private String code;
+
+        // Getters and setters
+        public String getDriverId() { return driverId; }
+        public void setDriverId(String driverId) { this.driverId = driverId; }
+
+        public String getUrl() { return url; }
+        public void setUrl(String url) { this.url = url; }
+
+        public String getGivenName() { return givenName; }
+        public void setGivenName(String givenName) { this.givenName = givenName; }
+
+        public String getFamilyName() { return familyName; }
+        public void setFamilyName(String familyName) { this.familyName = familyName; }
+
+        public String getDateOfBirth() { return dateOfBirth; }
+        public void setDateOfBirth(String dateOfBirth) { this.dateOfBirth = dateOfBirth; }
+
+        public String getNationality() { return nationality; }
+        public void setNationality(String nationality) { this.nationality = nationality; }
+
+        public String getPermanentNumber() { return permanentNumber; }
+        public void setPermanentNumber(String permanentNumber) { this.permanentNumber = permanentNumber; }
+
+        public String getCode() { return code; }
+        public void setCode(String code) { this.code = code; }
     }
 }
