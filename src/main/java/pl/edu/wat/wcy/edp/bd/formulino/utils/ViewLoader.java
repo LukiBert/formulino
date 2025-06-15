@@ -56,4 +56,15 @@ public class ViewLoader {
         stage.setScene(scene);
         stage.show();
     }
+
+    public static void loadRaceView(Stage stage) throws IOException {
+        FXMLLoader loader = new FXMLLoader(ViewLoader.class.getResource("/pl/edu/wat/wcy/edp/bd/formulino/fxml/race-view.fxml"));
+
+        Parent root = loader.load();
+
+        Scene scene = new Scene(root, 1000, 700);
+        stage.setTitle("Formulino - Race");
+        stage.setScene(scene);
+        stage.show();
+    }
 }

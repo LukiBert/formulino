@@ -7,10 +7,7 @@ import javafx.fxml.FXML;
 import javafx.scene.control.Button;
 import javafx.scene.control.ListCell;
 import javafx.scene.control.ListView;
-import pl.edu.wat.wcy.edp.bd.formulino.events.EventBus;
-import pl.edu.wat.wcy.edp.bd.formulino.events.NewLapEvent;
-import pl.edu.wat.wcy.edp.bd.formulino.events.PitStopEvent;
-import pl.edu.wat.wcy.edp.bd.formulino.events.RaceEvent;
+import pl.edu.wat.wcy.edp.bd.formulino.events.*;
 import pl.edu.wat.wcy.edp.bd.formulino.simulation.RaceSimulation;
 
 public class RaceSimulationController {
@@ -36,6 +33,12 @@ public class RaceSimulationController {
                         setStyle("-fx-text-fill: #1E90FF;"); // Blue
                     } else if (event instanceof NewLapEvent) {
                         setStyle("-fx-text-fill: #BEC1C4;"); // Gray
+                    } else if (event instanceof FastestLapEvent) {
+                        setStyle("-fx-text-fill: #c056cc;"); // Purple
+                    } else if (event instanceof PositionGainedEvent) {
+                        setStyle("-fx-text-fill: #0ec250;"); // Green
+                    } else if (event instanceof PositionGainedEvent) {
+                        setStyle("-fx-text-fill: #e3211e;"); // Red
                     } else {
                         setStyle("-fx-text-fill: black;");
                     }
@@ -53,7 +56,17 @@ public class RaceSimulationController {
                 Platform.runLater(() -> eventLog.add(0, e))
         );
 
-        // Subscribe other event types similarly
+        bus.subscribe(FastestLapEvent.class, e ->
+                Platform.runLater(() -> eventLog.add(0, e))
+        );
+
+        bus.subscribe(PositionGainedEvent.class, e ->
+                Platform.runLater(() -> eventLog.add(0, e))
+        );
+
+        bus.subscribe(PositionDroppedEvent.class, e ->
+                Platform.runLater(() -> eventLog.add(0, e))
+        );
     }
 
     @FXML

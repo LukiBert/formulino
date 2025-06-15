@@ -9,7 +9,9 @@ import pl.edu.wat.wcy.edp.bd.formulino.model.Lap;
 import pl.edu.wat.wcy.edp.bd.formulino.model.PitStop;
 
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.List;
+import java.util.Optional;
 
 public class RaceSimulation {
     private String season;
@@ -23,12 +25,25 @@ public class RaceSimulation {
     private List<PitStop> pitStops;
 
     private int currLapNum;
+    private int fastestLapDurationMs;
+
 
     public RaceSimulation(String season, int round) {
         this.season = season;
         this.round = round;
         currLapNum = 1;
         this.raceId = season + "_" + round;
+        fastestLapDurationMs = 9999999;
+
+        EventBus eventBus = EventBus.getInstance();
+
+        eventBus.publish(new NewRaceEvent(
+                raceId,
+                "NEW RACE",
+        "New race: " + season + " round " + round,
+                season,
+                round
+        ));
     }
 
     public void startSimulation() {
@@ -54,34 +69,56 @@ public class RaceSimulation {
 
                 String idFromLap = raceId + "_" + currLapNum;
 
-                for (Lap lap : currLaps) {
-                    Lap compare = prevLaps.stream()
-                            .filter(l -> l.getDriver_id().equals(lap.getDriver_id()))
-                            .findFirst().get();
+                Lap fastestInLap = currLaps.stream()
+                        .min(Comparator.comparing(Lap::getLap_time_ms)).stream().toList().getFirst();
 
-                    int positionDiff = compare.getPosition() - lap.getPosition();
-
+                if (fastestInLap.getLap_time_ms() < fastestLapDurationMs) {
                     Driver d = drivers.stream()
-                            .filter(driver -> driver.getDriverId().equals(lap.getDriver_id()))
+                            .filter(driver -> driver.getDriverId().equals(fastestInLap.getDriver_id()))
                             .toList()
                             .getFirst();
 
-                    if (positionDiff > 0) {
-                        eventBus.publish(new PositionGainedEvent(
-                                idFromLap + "_" + lap.getDriver_id(),
-                                "POS GAIN",
-                                d.getFamilyName() + " gained " + positionDiff + " positions",
-                                lap.getDriver_id(),
-                                positionDiff
-                        ));
-                    } else if (positionDiff < 0) {
-                        eventBus.publish(new PositionDroppedEvent(
-                                idFromLap + "_" + lap.getDriver_id(),
-                                "POS DROP",
-                                d.getFamilyName() + " dropped " + Math.abs(positionDiff) + " positions",
-                                lap.getDriver_id(),
-                                positionDiff
-                        ));
+                    eventBus.publish(new FastestLapEvent(
+                            idFromLap + fastestInLap.getRace_id(),
+                            "FASTEST LAP",
+                            d.getFamilyName() + " set the new fastest lap: " + fastestInLap.getLap_time(),
+                            fastestInLap.getDriver_id(),
+                            fastestInLap.getLap_time(),
+                            fastestInLap.getLap_time_ms()
+                    ));
+                }
+
+                for (Lap lap : currLaps) {
+                    Optional<Lap> maybePrevious = prevLaps.stream()
+                            .filter(l -> l.getDriver_id().equals(lap.getDriver_id()))
+                            .findFirst();
+
+                    if (maybePrevious.isPresent()) {
+                        Lap compare = maybePrevious.get();
+                        int positionDiff = compare.getPosition() - lap.getPosition();
+
+                        Driver d = drivers.stream()
+                                .filter(driver -> driver.getDriverId().equals(lap.getDriver_id()))
+                                .toList()
+                                .getFirst();
+
+                        if (positionDiff > 0) {
+                            eventBus.publish(new PositionGainedEvent(
+                                    idFromLap + "_" + lap.getDriver_id(),
+                                    "POS GAIN",
+                                    d.getFamilyName() + " gained " + positionDiff + " positions",
+                                    lap.getDriver_id(),
+                                    positionDiff
+                            ));
+                        } else if (positionDiff < 0) {
+                            eventBus.publish(new PositionDroppedEvent(
+                                    idFromLap + "_" + lap.getDriver_id(),
+                                    "POS DROP",
+                                    d.getFamilyName() + " dropped " + Math.abs(positionDiff) + " positions",
+                                    lap.getDriver_id(),
+                                    positionDiff
+                            ));
+                        }
                     }
                 }
 
@@ -112,6 +149,14 @@ public class RaceSimulation {
                     Thread.currentThread().interrupt();
                 }
             } while (!currLaps.isEmpty());
+
+            eventBus.publish(new RaceFinishEvent(
+                    raceId,
+                    "FINISH RACE",
+                    "The race of " + season + " round " + round +" has ended",
+                    season,
+                    round
+            ));
         }).start();
 
     }

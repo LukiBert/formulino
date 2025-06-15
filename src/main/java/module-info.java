@@ -1,4 +1,4 @@
-module pl.edu.wat.wcy.edp.bd.formulino.formulino {
+module pl.edu.wat.wcy.edp.bd.formulino {
     requires javafx.controls;
     requires javafx.fxml;
     requires com.fasterxml.jackson.annotation;
@@ -7,6 +7,7 @@ module pl.edu.wat.wcy.edp.bd.formulino.formulino {
     requires java.sql;
     requires org.xerial.sqlitejdbc;
     requires java.net.http;
+    requires org.json;
 
 
     opens pl.edu.wat.wcy.edp.bd.formulino to javafx.fxml;
@@ -19,4 +20,6 @@ module pl.edu.wat.wcy.edp.bd.formulino.formulino {
     opens pl.edu.wat.wcy.edp.bd.formulino.simulation to javafx.fxml;
     exports pl.edu.wat.wcy.edp.bd.formulino.events;
     opens pl.edu.wat.wcy.edp.bd.formulino.events to javafx.fxml;
+    exports pl.edu.wat.wcy.edp.bd.formulino.weather;
+    opens pl.edu.wat.wcy.edp.bd.formulino.weather to javafx.fxml;
 }
