@@ -2,10 +2,7 @@ package pl.edu.wat.wcy.edp.bd.formulino.dao;
 
 import org.sql2o.Connection;
 import org.sql2o.Sql2o;
-import pl.edu.wat.wcy.edp.bd.formulino.model.Circuit;
-import pl.edu.wat.wcy.edp.bd.formulino.model.Race;
-import pl.edu.wat.wcy.edp.bd.formulino.model.Location;
-import pl.edu.wat.wcy.edp.bd.formulino.model.Driver;
+import pl.edu.wat.wcy.edp.bd.formulino.model.*;
 
 import java.util.List;
 
@@ -184,6 +181,36 @@ public class RaceDAO {
             return results.stream()
                     .map(this::mapToRace)
                     .toList();
+        }
+    }
+
+    public void saveLaps(List<Lap> laps) {
+        String sql = "INSERT OR IGNORE INTO laps " +
+                     "(race_id, lap_number, driver_id, position, lap_time, lap_time_ms) " +
+                     "VALUES (:raceId, :lapNumber, :driverId, :position, :time, :timeMs)";
+
+        try (Connection con = sql2o.open()) {
+            for (Lap lap : laps) {
+                con.createQuery(sql)
+                        .addParameter("raceId", lap.getRace_id())
+                        .addParameter("lapNumber", lap.getLap_number())
+                        .addParameter("driverId", lap.getDriver_id())
+                        .addParameter("position", lap.getPosition())
+                        .addParameter("time", lap.getLap_time())
+                        .addParameter("timeMs", lap.getLap_time_ms())
+                        .executeUpdate();
+            }
+        }
+    }
+
+    public List<Lap> getAllLaps(String raceId, int lapNumber) {
+        String sql = "SELECT * FROM laps WHERE race_id = :raceId AND lap_number = :lapNumber ORDER BY position";
+
+        try (Connection con = sql2o.open()) {
+            return con.createQuery(sql)
+                    .addParameter("raceId", raceId)
+                    .addParameter("lapNumber", lapNumber)
+                    .executeAndFetch(Lap.class);
         }
     }
 

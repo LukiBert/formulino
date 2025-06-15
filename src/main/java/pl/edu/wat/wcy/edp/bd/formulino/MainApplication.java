@@ -19,7 +19,7 @@ public class MainApplication extends Application {
         Sql2o sql2o = DBConnection.createSql2o();
         RaceDAO raceDao = new RaceDAO(sql2o);
 
-        List<Lap> laps = FetchService.fetchAllLaps("2025", "1");
+        List<Lap> laps = raceDao.getAllLaps("2025_1", 30);
 
         for (Lap l : laps) {
             System.out.println(l);

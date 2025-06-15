@@ -1,6 +1,5 @@
 package pl.edu.wat.wcy.edp.bd.formulino.utils;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
 import pl.edu.wat.wcy.edp.bd.formulino.model.Driver;
 import pl.edu.wat.wcy.edp.bd.formulino.model.Lap;
 import pl.edu.wat.wcy.edp.bd.formulino.model.Race;
@@ -14,7 +13,6 @@ import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
 import java.util.concurrent.*;
-import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
 public class FetchService {
@@ -72,7 +70,7 @@ public class FetchService {
 
             System.out.println("Total laps to fetch: " + totalLaps);
 
-            // Calculate number of requests needed
+            // Calculate a number of requests needed
             int numRequests = (int) Math.ceil((double) totalLaps / MAX_LIMIT);
             System.out.println("Number of requests needed: " + numRequests);
 
@@ -80,24 +78,24 @@ public class FetchService {
             ExecutorService executor = Executors.newFixedThreadPool(CONCURRENT_REQUESTS);
 
             try {
-                // Create list of futures for all requests
+                // Create a list of futures for all requests
                 List<CompletableFuture<List<Lap>>> futures = IntStream.range(0, numRequests)
                         .mapToObj(i -> {
                             int offset = i * MAX_LIMIT;
                             return CompletableFuture.supplyAsync(
                                     () -> {
-                                        fetchLapsBatch(season, round, offset, MAX_LIMIT);
+                                        List<Lap> laps = fetchLapsBatch(season, round, offset, MAX_LIMIT);
                                         try {
                                             Thread.sleep(300);
+                                            return laps;
                                         } catch (InterruptedException e) {
                                             System.out.println("Sleep interrupted");
+                                            return new ArrayList<Lap>();
                                         }
-                                        return null;
                                     },
                                     executor
                             );
-                        })
-                        .collect(Collectors.toList());
+                        }).toList();
 
                 // Wait for all requests to complete and combine results
                 List<Lap> allLaps = new ArrayList<>();
@@ -114,11 +112,11 @@ public class FetchService {
 
                 // Set race ID for all laps
                 String raceId = season + "_" + round;
-                allLaps.forEach(lap -> lap.setRaceId(raceId));
+                allLaps.forEach(lap -> lap.setRace_id(raceId));
 
                 // Sort laps by lap number and position for consistency
                 allLaps.sort(Comparator
-                        .comparing(Lap::getLapNumber)
+                        .comparing(Lap::getLap_number)
                         .thenComparing(Lap::getPosition));
 
                 System.out.println("Successfully fetched " + allLaps.size() + " laps");
@@ -149,12 +147,14 @@ public class FetchService {
      */
     private static int getTotalLapCount(String season, String round) {
         HttpRequest request = HttpRequest.newBuilder()
-                .uri(URI.create(BASE_URL + season + "/" + round + "/laps/?limit=1"))
+                .uri(URI.create(BASE_URL + round + "/laps/?limit=1"))
                 .build();
 
         try {
             HttpResponse<String> response = client.send(request, HttpResponse.BodyHandlers.ofString());
-            return RaceMapper.extractTotalFromResponse(response.body());
+            int total = RaceMapper.extractTotalFromResponse(response.body());
+            System.out.println("Successfully fetched total lap count: " + total);
+            return total;
         } catch (Exception e) {
             System.err.println("Error getting total lap count: " + e.getMessage());
             return 0;
@@ -165,12 +165,12 @@ public class FetchService {
      * Fetch a batch of laps with specific offset and limit
      */
     private static List<Lap> fetchLapsBatch(String season, String round, int offset, int limit) {
-        String url = BASE_URL + season + "/" + round + "/laps/?offset=" + offset + "&limit=" + limit;
+        String url = BASE_URL + round + "/laps/?offset=" + offset + "&limit=" + limit;
         HttpRequest request = HttpRequest.newBuilder()
                 .uri(URI.create(url))
                 .build();
 
-        System.out.println("Fetching batch: offset=" + offset + ", limit=" + limit);
+        System.out.println("Fetching batch: " + url);
 
         try {
             HttpResponse<String> response = client.send(request, HttpResponse.BodyHandlers.ofString());
@@ -179,9 +179,5 @@ public class FetchService {
             System.err.println("Error fetching batch (offset=" + offset + "): " + e.getMessage());
             return new ArrayList<>();
         }
-    }
-
-    private static int extractTotalFromResponse(String jsonResponse) throws JsonProcessingException {
-        return RaceMapper.extractTotalFromResponse(jsonResponse);
     }
 }

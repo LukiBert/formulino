@@ -46,6 +46,7 @@ CREATE TABLE  laps (
                         driver_id TEXT,
                         position INTEGER,
                         lap_time TEXT,
+                        lap_time_ms INTEGER,
                         PRIMARY KEY (race_id, lap_number, driver_id),
                         FOREIGN KEY (driver_id) REFERENCES drivers(driver_id)
 );
@@ -58,12 +59,13 @@ CREATE TABLE pitstops (
                        duration TEXT,
                        stop_time TEXT,
                        PRIMARY KEY (race_id, driver_id, lap_number, stop_number),
-                        FOREIGN KEY (driver_id) REFERENCES drivers(driver_id)
+                       FOREIGN KEY (driver_id) REFERENCES drivers(driver_id)
 );
 
 -- Create indexes for better query performance
 CREATE INDEX IF NOT EXISTS idx_laps_race_lap ON laps(race_id, lap_number);
 CREATE INDEX IF NOT EXISTS idx_pitstops_race_lap ON pitstops(race_id, lap_number);
+CREATE INDEX idx_laps_race_lap ON laps(race_id, lap_number);
 
 CREATE INDEX idx_races_season ON races(season);
 CREATE INDEX idx_circuits_location ON circuits(locality, country);
