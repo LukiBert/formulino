@@ -19,7 +19,7 @@ public class MainApplication extends Application {
         Sql2o sql2o = DBConnection.createSql2o();
         RaceDAO raceDao = RaceDAO.getInstance(sql2o);
 
-        ViewLoader.loadRaceView(stage);
+        ViewLoader.loadHomeView(stage, raceDao);
     }
 
     public static void main(String[] args) { launch(); }

@@ -5,7 +5,9 @@ import javafx.scene.Parent;
 import javafx.scene.Scene;
 import javafx.stage.Stage;
 import pl.edu.wat.wcy.edp.bd.formulino.controller.HomeViewController;
+import pl.edu.wat.wcy.edp.bd.formulino.controller.RaceViewController;
 import pl.edu.wat.wcy.edp.bd.formulino.dao.RaceDAO;
+import pl.edu.wat.wcy.edp.bd.formulino.model.Race;
 import pl.edu.wat.wcy.edp.bd.formulino.simulation.RaceSimulationController;
 
 import java.io.IOException;
@@ -57,10 +59,12 @@ public class ViewLoader {
         stage.show();
     }
 
-    public static void loadRaceView(Stage stage) throws IOException {
+    public static void loadRaceView(Stage stage, Race race) throws IOException {
         FXMLLoader loader = new FXMLLoader(ViewLoader.class.getResource("/pl/edu/wat/wcy/edp/bd/formulino/fxml/race-view.fxml"));
-
         Parent root = loader.load();
+
+        RaceViewController controller = loader.getController();
+        controller.setRace(race);
 
         Scene scene = new Scene(root, 1000, 700);
         stage.setTitle("Formulino - Race");

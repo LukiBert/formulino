@@ -16,7 +16,7 @@
         <Insets top="20" right="20" bottom="20" left="20"/>
     </padding>
 
-    <fx:include source="simulation-view.fxml"/>
+    <fx:include fx:id="simulationView" source="simulation-view.fxml"/>
 
     <fx:include source="weather-view.fxml"/>
 </VBox>

@@ -6,9 +6,12 @@ import javafx.fxml.FXML;
 import javafx.fxml.Initializable;
 import javafx.scene.control.*;
 import javafx.scene.control.cell.PropertyValueFactory;
+import javafx.stage.Stage;
 import pl.edu.wat.wcy.edp.bd.formulino.dao.RaceDAO;
 import pl.edu.wat.wcy.edp.bd.formulino.model.Race;
+import pl.edu.wat.wcy.edp.bd.formulino.utils.ViewLoader;
 
+import java.io.IOException;
 import java.net.URL;
 import java.util.List;
 import java.util.ResourceBundle;
@@ -39,6 +42,21 @@ public class HomeViewController implements Initializable {
     @Override
     public void initialize(URL location, ResourceBundle resources) {
         setupTableColumns();
+
+        racesTableView.setRowFactory(tv -> {
+            TableRow<Race> row = new TableRow<>();
+            row.setOnMouseClicked(event -> {
+                if (!row.isEmpty() && event.getClickCount() == 2) {
+                    Race clickedRace = row.getItem();
+                    try {
+                        ViewLoader.loadRaceView((Stage) racesTableView.getScene().getWindow(), clickedRace);
+                    } catch (IOException e) {
+                        e.printStackTrace();
+                    }
+                }
+            });
+            return row;
+        });
     }
 
     private void setupTableColumns() {

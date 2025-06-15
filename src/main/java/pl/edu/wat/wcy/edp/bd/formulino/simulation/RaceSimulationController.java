@@ -8,9 +8,12 @@ import javafx.scene.control.Button;
 import javafx.scene.control.ListCell;
 import javafx.scene.control.ListView;
 import pl.edu.wat.wcy.edp.bd.formulino.events.*;
+import pl.edu.wat.wcy.edp.bd.formulino.model.Race;
 import pl.edu.wat.wcy.edp.bd.formulino.simulation.RaceSimulation;
 
 public class RaceSimulationController {
+    private Race race;
+
     @FXML
     private Button startButton;
     @FXML private ListView<RaceEvent> eventListView;
@@ -71,7 +74,16 @@ public class RaceSimulationController {
 
     @FXML
     public void onStartSimulation() {
-        RaceSimulation sim = new RaceSimulation("2025", 1);
+        if (this.race == null) {
+            System.err.println("Race not set!");
+            return;
+        }
+        RaceSimulation sim = new RaceSimulation(race.getSeason(), Integer.parseInt(race.getRound()));
         sim.startSimulation();
+    }
+
+    public void setRace(Race race) {
+        this.race = race;
+        System.out.println("The race is: " + this.race.getRaceName());
     }
 }
