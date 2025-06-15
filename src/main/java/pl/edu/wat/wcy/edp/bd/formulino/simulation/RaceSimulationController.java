@@ -8,6 +8,7 @@ import javafx.scene.control.Button;
 import javafx.scene.control.ListCell;
 import javafx.scene.control.ListView;
 import pl.edu.wat.wcy.edp.bd.formulino.events.EventBus;
+import pl.edu.wat.wcy.edp.bd.formulino.events.NewLapEvent;
 import pl.edu.wat.wcy.edp.bd.formulino.events.PitStopEvent;
 import pl.edu.wat.wcy.edp.bd.formulino.events.RaceEvent;
 import pl.edu.wat.wcy.edp.bd.formulino.simulation.RaceSimulation;
@@ -33,6 +34,8 @@ public class RaceSimulationController {
 
                     if (event instanceof PitStopEvent) {
                         setStyle("-fx-text-fill: #1E90FF;"); // Blue
+                    } else if (event instanceof NewLapEvent) {
+                        setStyle("-fx-text-fill: #BEC1C4;"); // Gray
                     } else {
                         setStyle("-fx-text-fill: black;");
                     }
@@ -41,6 +44,10 @@ public class RaceSimulationController {
         });
 
         EventBus bus = EventBus.getInstance();
+
+        bus.subscribe(NewLapEvent.class, e ->
+                Platform.runLater(() -> eventLog.add(0, e))
+        );
 
         bus.subscribe(PitStopEvent.class, e ->
                 Platform.runLater(() -> eventLog.add(0, e))

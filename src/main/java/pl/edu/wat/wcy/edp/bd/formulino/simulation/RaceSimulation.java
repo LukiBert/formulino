@@ -3,9 +3,7 @@ package pl.edu.wat.wcy.edp.bd.formulino.simulation;
 import org.sql2o.Sql2o;
 import pl.edu.wat.wcy.edp.bd.formulino.dao.DBConnection;
 import pl.edu.wat.wcy.edp.bd.formulino.dao.RaceDAO;
-import pl.edu.wat.wcy.edp.bd.formulino.events.EventBus;
-import pl.edu.wat.wcy.edp.bd.formulino.events.PitStopEvent;
-import pl.edu.wat.wcy.edp.bd.formulino.events.RaceEvent;
+import pl.edu.wat.wcy.edp.bd.formulino.events.*;
 import pl.edu.wat.wcy.edp.bd.formulino.model.Driver;
 import pl.edu.wat.wcy.edp.bd.formulino.model.Lap;
 import pl.edu.wat.wcy.edp.bd.formulino.model.PitStop;
@@ -47,11 +45,47 @@ public class RaceSimulation {
             pitStops = raceDao.getPitStopsFromLap(raceId, currLapNum);
 
             do {
-                System.out.println(raceId + " Lap: " +  currLapNum);
+                eventBus.publish(new NewLapEvent(
+                        raceId + "_" + currLapNum,
+                        "NEW LAP",
+                        "Lap: " + currLapNum,
+                        currLapNum
+                ));
+
+                String idFromLap = raceId + "_" + currLapNum;
+
+                for (Lap lap : currLaps) {
+                    Lap compare = prevLaps.stream()
+                            .filter(l -> l.getDriver_id().equals(lap.getDriver_id()))
+                            .findFirst().get();
+
+                    int positionDiff = compare.getPosition() - lap.getPosition();
+
+                    Driver d = drivers.stream()
+                            .filter(driver -> driver.getDriverId().equals(lap.getDriver_id()))
+                            .toList()
+                            .getFirst();
+
+                    if (positionDiff > 0) {
+                        eventBus.publish(new PositionGainedEvent(
+                                idFromLap + "_" + lap.getDriver_id(),
+                                "POS GAIN",
+                                d.getFamilyName() + " gained " + positionDiff + " positions",
+                                lap.getDriver_id(),
+                                positionDiff
+                        ));
+                    } else if (positionDiff < 0) {
+                        eventBus.publish(new PositionDroppedEvent(
+                                idFromLap + "_" + lap.getDriver_id(),
+                                "POS DROP",
+                                d.getFamilyName() + " dropped " + Math.abs(positionDiff) + " positions",
+                                lap.getDriver_id(),
+                                positionDiff
+                        ));
+                    }
+                }
 
                 for (PitStop pit : pitStops) {
-                    //System.out.println(pit);
-
                     Driver d = drivers.stream()
                             .filter(driver -> driver.getDriverId().equals(pit.getDriver_id()))
                             .toList()
@@ -59,7 +93,7 @@ public class RaceSimulation {
 
                     eventBus.publish(new PitStopEvent(
                             raceId + "_" + currLapNum + "_" + pit.getDriver_id(),
-                            "PITSTOP",
+                            "PIT STOP",
                             d.getFamilyName() + " pitted for " + pit.getDuration() + "s",
                             pit.getDriver_id(),
                             pit.getDuration_ms()
@@ -70,8 +104,8 @@ public class RaceSimulation {
                 prevLaps.addAll(currLaps);
                 currLapNum++;
                 currLaps.clear();
-                currLaps.addAll(raceDao.getAllTimingsFromLap(season + "_" + round, currLapNum));
-                pitStops = raceDao.getPitStopsFromLap(season + "_" + round, currLapNum);
+                currLaps.addAll(raceDao.getAllTimingsFromLap(raceId, currLapNum));
+                pitStops = raceDao.getPitStopsFromLap(raceId, currLapNum);
                 try {
                     Thread.sleep(1000);
                 } catch (InterruptedException e) {
