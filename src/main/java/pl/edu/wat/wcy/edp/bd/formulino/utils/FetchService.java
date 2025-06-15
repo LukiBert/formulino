@@ -1,9 +1,6 @@
 package pl.edu.wat.wcy.edp.bd.formulino.utils;
 
-import pl.edu.wat.wcy.edp.bd.formulino.model.Driver;
-import pl.edu.wat.wcy.edp.bd.formulino.model.Lap;
-import pl.edu.wat.wcy.edp.bd.formulino.model.Race;
-import pl.edu.wat.wcy.edp.bd.formulino.model.RaceMapper;
+import pl.edu.wat.wcy.edp.bd.formulino.model.*;
 
 import java.net.URI;
 import java.net.http.HttpClient;
@@ -25,7 +22,7 @@ public class FetchService {
 
     public static List<Race> fetchSeasonRaces() {
         HttpRequest request = HttpRequest.newBuilder()
-                .uri(URI.create(BASE_URL + "races/"))
+                .uri(URI.create(BASE_URL + "races/?limit=100"))
                 .build();
 
         System.out.println("Fetching season races...");
@@ -42,7 +39,7 @@ public class FetchService {
 
     public static List<Driver> fetchDrivers() {
         HttpRequest request = HttpRequest.newBuilder()
-                .uri(URI.create(BASE_URL + "drivers/"))
+                .uri(URI.create(BASE_URL + "drivers/?limit=100"))
                 .build();
 
         System.out.println("Fetching drivers...");
@@ -178,6 +175,38 @@ public class FetchService {
         } catch (Exception e) {
             System.err.println("Error fetching batch (offset=" + offset + "): " + e.getMessage());
             return new ArrayList<>();
+        }
+    }
+
+    /**
+     * Fetch all pit stops from a given race
+     */
+    public static List<PitStop> fetchAllPitStopsFromRace(String season, String round) {
+        String url = BASE_URL + round + "/pitstops/?limit=100";
+        HttpRequest request = HttpRequest.newBuilder()
+                .uri(URI.create(url))
+                .build();
+
+        System.out.println("Fetching pitstops...");
+        try {
+            HttpResponse<String> response = client.send(request, HttpResponse.BodyHandlers.ofString());
+            List<PitStop> allPitStops = RaceMapper.mapJsonToPitStops(response.body());
+
+            // Set race ID for all laps
+            String raceId = season + "_" + round;
+            allPitStops.forEach(pit -> pit.setRace_id(raceId));
+
+            // Sort laps by lap number
+            allPitStops.sort(Comparator
+                    .comparing(PitStop::getLap_number));
+
+            System.out.println("Successfully fetched " + allPitStops.size() + " pit stops");
+            return allPitStops;
+        } catch (Exception e) {
+            System.out.println("Error occurred while fetching pitstops: " + e.getMessage());
+            return new ArrayList<>();
+        } finally {
+            System.out.println("Fetching pitstops ENDED");
         }
     }
 }

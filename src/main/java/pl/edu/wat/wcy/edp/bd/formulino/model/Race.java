@@ -21,6 +21,12 @@ public class Race {
     @JsonProperty("Laps")
     private List<LapData> laps;
 
+    @JsonProperty("PitStops")
+    private List<PitStop> pitStops;
+
+    public List<PitStop> getPitStops() { return pitStops; }
+    public void setPitStops(List<PitStop> pitStops) { this.pitStops = pitStops; }
+
     public List<LapData> getLaps() { return laps; }
     public void setLaps(List<LapData> laps) { this.laps = laps; }
 

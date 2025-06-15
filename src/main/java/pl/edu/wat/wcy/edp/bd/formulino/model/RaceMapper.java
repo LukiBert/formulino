@@ -45,4 +45,21 @@ public class RaceMapper {
 
     return laps;
     }
+
+    public static List<PitStop> mapJsonToPitStops(String jsonString) throws Exception {
+        List<PitStop> pitStops = new ArrayList<>();
+
+        F1Response response = objectMapper.readValue(jsonString, F1Response.class);
+
+        for (Race race : response.getMrData().getRaceTable().getRaces()) {
+            if (race.getPitStops() != null) {
+                for (PitStop pitStop : race.getPitStops()) {
+                    PitStop pit = PitStop.fromFetchedPitStop(pitStop);
+                    pitStops.add(pit);
+                }
+            }
+        }
+
+        return pitStops;
+    }
 }

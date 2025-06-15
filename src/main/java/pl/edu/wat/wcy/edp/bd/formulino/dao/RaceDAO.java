@@ -38,6 +38,10 @@ public class RaceDAO {
                     .addParameter("permanentNumber", driver.getPermanentNumber())
                     .addParameter("code", driver.getCode())
                     .executeUpdate();
+
+            conn.commit();
+        } catch (Exception ex) {
+            System.err.println(ex.getMessage());
         }
     }
 
@@ -61,11 +65,10 @@ public class RaceDAO {
     /**
      * Save a Race with its Circuit and Location to the database
      */
-    public void saveRace(Race race) {
-        try (Connection conn = sql2o.beginTransaction()) {
+    public void saveRace(Connection conn, Race race) {
+        try {
             if (race.getCircuit() != null && race.getCircuit().getLocation() != null) {
                 saveLocation(conn, race.getCircuit().getLocation());
-
                 saveCircuit(conn, race.getCircuit());
             }
 
@@ -85,11 +88,13 @@ public class RaceDAO {
                     .executeUpdate();
 
             conn.commit();
+        } catch (Exception ex) {
+            System.err.println(ex.getMessage());
         }
     }
 
     /**
-     * Save Location to database
+     * Save Location to a database
      */
     private void saveLocation(Connection conn, Location location) {
         String insertLocationSql = """
@@ -98,16 +103,20 @@ public class RaceDAO {
             ON CONFLICT (locality, country) DO NOTHING
             """;
 
-        conn.createQuery(insertLocationSql)
-                .addParameter("lat", location.getLat())
-                .addParameter("longitude", location.getLongitude())
-                .addParameter("locality", location.getLocality())
-                .addParameter("country", location.getCountry())
-                .executeUpdate();
+        try {
+            conn.createQuery(insertLocationSql)
+                    .addParameter("lat", location.getLat())
+                    .addParameter("longitude", location.getLongitude())
+                    .addParameter("locality", location.getLocality())
+                    .addParameter("country", location.getCountry())
+                    .executeUpdate();
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
     }
 
     /**
-     * Save Circuit to database
+     * Save Circuit to a database
      */
     private void saveCircuit(Connection conn, Circuit circuit) {
         String insertCircuitSql = """
@@ -120,14 +129,18 @@ public class RaceDAO {
                 country = EXCLUDED.country
             """;
 
-        Location location = circuit.getLocation();
-        conn.createQuery(insertCircuitSql)
-                .addParameter("circuitId", circuit.getCircuitId())
-                .addParameter("url", circuit.getUrl())
-                .addParameter("circuitName", circuit.getCircuitName())
-                .addParameter("locality", location != null ? location.getLocality() : null)
-                .addParameter("country", location != null ? location.getCountry() : null)
-                .executeUpdate();
+        try {
+            Location location = circuit.getLocation();
+            conn.createQuery(insertCircuitSql)
+                    .addParameter("circuitId", circuit.getCircuitId())
+                    .addParameter("url", circuit.getUrl())
+                    .addParameter("circuitName", circuit.getCircuitName())
+                    .addParameter("locality", location != null ? location.getLocality() : null)
+                    .addParameter("country", location != null ? location.getCountry() : null)
+                    .executeUpdate();
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
     }
 
     /**
@@ -184,6 +197,9 @@ public class RaceDAO {
         }
     }
 
+    /**
+     * Save laps
+     */
     public void saveLaps(List<Lap> laps) {
         String sql = "INSERT OR IGNORE INTO laps " +
                      "(race_id, lap_number, driver_id, position, lap_time, lap_time_ms) " +
@@ -203,7 +219,10 @@ public class RaceDAO {
         }
     }
 
-    public List<Lap> getAllLaps(String raceId, int lapNumber) {
+    /**
+     * Find all timings in a given lap in a given race
+     */
+    public List<Lap> getAllTimingsFromLap(String raceId, int lapNumber) {
         String sql = "SELECT * FROM laps WHERE race_id = :raceId AND lap_number = :lapNumber ORDER BY position";
 
         try (Connection con = sql2o.open()) {
@@ -214,8 +233,54 @@ public class RaceDAO {
         }
     }
 
+    public void savePitStops(List<PitStop> pitStops) {
+        String sql = """
+            INSERT OR IGNORE INTO pitstops 
+            (race_id, stop_number, driver_id, lap_number, stop_time, duration, duration_ms)
+            VALUES (:race_id, :stop_number, :driver_id, :lap_number, :stop_time, :duration, :duration_ms)
+        """;
+
+        try (Connection con = sql2o.beginTransaction()) {
+            for (PitStop ps : pitStops) {
+                con.createQuery(sql)
+                        .addParameter("race_id", ps.getRace_id())
+                        .addParameter("stop_number", ps.getStop_number())
+                        .addParameter("driver_id", ps.getDriver_id())
+                        .addParameter("lap_number", ps.getLap_number())
+                        .addParameter("stop_time", ps.getStop_time())
+                        .addParameter("duration", ps.getDuration())
+                        .addParameter("duration_ms", ps.getDuration_ms())
+                        .executeUpdate();
+            }
+            con.commit();
+        } catch (Exception e) {
+            System.err.println("Error saving pit stops: " + e.getMessage());
+        }
+    }
+
+    public List<PitStop> getAllPitStops(String raceId) {
+        String sql = "SELECT * FROM pitstops WHERE race_id = :raceId ORDER BY lap_number, stop_number";
+
+        try (Connection con = sql2o.open()) {
+            return con.createQuery(sql)
+                    .addParameter("raceId", raceId)
+                    .executeAndFetch(PitStop.class);
+        }
+    }
+
+    public List<PitStop> getPitStopsFromLap(String raceId,  int lapNumber) {
+        String sql = "SELECT * FROM pitstops WHERE race_id = :raceId AND lap_number = :lapNumber ORDER BY stop_time";
+
+        try (Connection con = sql2o.open()) {
+            return con.createQuery(sql)
+                    .addParameter("raceId", raceId)
+                    .addParameter("lapNumber", lapNumber)
+                    .executeAndFetch(PitStop.class);
+        }
+    }
+
     /**
-     * Helper method to map database result to Race object
+     * Helper method to map a database result to Race object
      */
     private Race mapToRace(RaceResult result) {
         Race race = new Race();

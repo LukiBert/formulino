@@ -5,8 +5,8 @@ import javafx.stage.Stage;
 import org.sql2o.Sql2o;
 import pl.edu.wat.wcy.edp.bd.formulino.dao.DBConnection;
 import pl.edu.wat.wcy.edp.bd.formulino.dao.RaceDAO;
-import pl.edu.wat.wcy.edp.bd.formulino.model.Driver;
 import pl.edu.wat.wcy.edp.bd.formulino.model.Lap;
+import pl.edu.wat.wcy.edp.bd.formulino.model.PitStop;
 import pl.edu.wat.wcy.edp.bd.formulino.utils.FetchService;
 import pl.edu.wat.wcy.edp.bd.formulino.utils.ViewLoader;
 
@@ -19,10 +19,10 @@ public class MainApplication extends Application {
         Sql2o sql2o = DBConnection.createSql2o();
         RaceDAO raceDao = new RaceDAO(sql2o);
 
-        List<Lap> laps = raceDao.getAllLaps("2025_1", 30);
+        List<PitStop> pitStops = raceDao.getAllPitStops("2025_1");
 
-        for (Lap l : laps) {
-            System.out.println(l);
+        for (PitStop pitStop : pitStops) {
+            System.out.println(pitStop);
         }
 
         ViewLoader.loadHomeView(stage, raceDao);
