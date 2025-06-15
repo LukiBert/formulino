@@ -9,8 +9,17 @@ import java.util.List;
 public class RaceDAO {
     private final Sql2o sql2o;
 
-    public RaceDAO(Sql2o sql2o) {
+    private static RaceDAO instance;
+
+    private RaceDAO(Sql2o sql2o) {
         this.sql2o = sql2o;
+    }
+
+    public static synchronized RaceDAO getInstance(Sql2o sql2o) {
+        if (instance == null) {
+            instance = new RaceDAO(sql2o);
+        }
+        return instance;
     }
 
     public void saveDriver(Driver driver) {
@@ -59,6 +68,27 @@ public class RaceDAO {
             return results.stream()
                     .map(this::mapToDriver)
                     .toList();
+        }
+    }
+
+    public Driver getDriverById(String driverId) {
+        String sql = """
+            SELECT driver_id as driverId, url, given_name as givenName, family_name as familyName,
+                   date_of_birth as dateOfBirth, nationality, permanent_number as permanentNumber, code
+            FROM drivers
+            WHERE driver_id = :driverId
+            ORDER BY permanent_number
+            """;
+
+        try (Connection conn = sql2o.open()) {
+            List<DriverResult> results = conn.createQuery(sql)
+                    .addParameter("driverId", driverId)
+                    .executeAndFetch(DriverResult.class);
+
+            return results.stream()
+                    .map(this::mapToDriver)
+                    .toList()
+                    .getFirst();
         }
     }
 

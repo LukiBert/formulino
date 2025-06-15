@@ -15,4 +15,8 @@ module pl.edu.wat.wcy.edp.bd.formulino.formulino {
     opens pl.edu.wat.wcy.edp.bd.formulino.dao to sql2o;
 
     exports pl.edu.wat.wcy.edp.bd.formulino;
+    exports pl.edu.wat.wcy.edp.bd.formulino.simulation;
+    opens pl.edu.wat.wcy.edp.bd.formulino.simulation to javafx.fxml;
+    exports pl.edu.wat.wcy.edp.bd.formulino.events;
+    opens pl.edu.wat.wcy.edp.bd.formulino.events to javafx.fxml;
 }

@@ -6,6 +6,7 @@ import javafx.scene.Scene;
 import javafx.stage.Stage;
 import pl.edu.wat.wcy.edp.bd.formulino.controller.HomeViewController;
 import pl.edu.wat.wcy.edp.bd.formulino.dao.RaceDAO;
+import pl.edu.wat.wcy.edp.bd.formulino.simulation.RaceSimulationController;
 
 import java.io.IOException;
 
@@ -32,7 +33,7 @@ public class ViewLoader {
      * Alternative method for when you want to return the loaded controller
      */
     public static HomeViewController loadHomeViewWithController(Stage stage, RaceDAO raceDao) throws IOException {
-        FXMLLoader loader = new FXMLLoader(ViewLoader.class.getResource("fxml/home-view.fxml"));
+        FXMLLoader loader = new FXMLLoader(ViewLoader.class.getResource("/pl/edu/wat/wcy/edp/bd/formulino/fxml/simulation-view.fxml"));
 
         Parent root = loader.load();
         HomeViewController controller = loader.getController();
@@ -43,5 +44,16 @@ public class ViewLoader {
         stage.setScene(scene);
 
         return controller;
+    }
+
+    public static void loadSimulationView(Stage stage) throws IOException {
+        FXMLLoader loader = new FXMLLoader(ViewLoader.class.getResource("/pl/edu/wat/wcy/edp/bd/formulino/fxml/simulation-view.fxml"));
+
+        Parent root = loader.load();
+
+        Scene scene = new Scene(root, 1000, 700);
+        stage.setTitle("Formulino - Race");
+        stage.setScene(scene);
+        stage.show();
     }
 }

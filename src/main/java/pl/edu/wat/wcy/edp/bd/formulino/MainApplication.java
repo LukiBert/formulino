@@ -17,15 +17,9 @@ public class MainApplication extends Application {
     @Override
     public void start(Stage stage) throws IOException {
         Sql2o sql2o = DBConnection.createSql2o();
-        RaceDAO raceDao = new RaceDAO(sql2o);
+        RaceDAO raceDao = RaceDAO.getInstance(sql2o);
 
-        List<PitStop> pitStops = raceDao.getAllPitStops("2025_1");
-
-        for (PitStop pitStop : pitStops) {
-            System.out.println(pitStop);
-        }
-
-        ViewLoader.loadHomeView(stage, raceDao);
+        ViewLoader.loadSimulationView(stage);
     }
 
     public static void main(String[] args) { launch(); }
