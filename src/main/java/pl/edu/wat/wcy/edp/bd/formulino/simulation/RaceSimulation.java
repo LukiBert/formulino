@@ -14,6 +14,8 @@ import java.util.List;
 import java.util.Optional;
 
 public class RaceSimulation {
+    private final int SIM_SPEED = 400;
+
     private String season;
     private int round;
     private String raceId;
@@ -86,6 +88,8 @@ public class RaceSimulation {
                             fastestInLap.getLap_time(),
                             fastestInLap.getLap_time_ms()
                     ));
+
+                    fastestLapDurationMs = fastestInLap.getLap_time_ms();
                 }
 
                 for (Lap lap : currLaps) {
@@ -144,7 +148,7 @@ public class RaceSimulation {
                 currLaps.addAll(raceDao.getAllTimingsFromLap(raceId, currLapNum));
                 pitStops = raceDao.getPitStopsFromLap(raceId, currLapNum);
                 try {
-                    Thread.sleep(1000);
+                    Thread.sleep(SIM_SPEED);
                 } catch (InterruptedException e) {
                     Thread.currentThread().interrupt();
                 }

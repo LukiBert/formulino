@@ -40,7 +40,7 @@ public class RaceSimulationController {
                         setStyle("-fx-text-fill: #c056cc;"); // Purple
                     } else if (event instanceof PositionGainedEvent) {
                         setStyle("-fx-text-fill: #0ec250;"); // Green
-                    } else if (event instanceof PositionGainedEvent) {
+                    } else if (event instanceof PositionDroppedEvent) {
                         setStyle("-fx-text-fill: #e3211e;"); // Red
                     } else {
                         setStyle("-fx-text-fill: black;");
@@ -68,6 +68,10 @@ public class RaceSimulationController {
         );
 
         bus.subscribe(PositionDroppedEvent.class, e ->
+                Platform.runLater(() -> eventLog.add(0, e))
+        );
+
+        bus.subscribe(RaceFinishEvent.class, e ->
                 Platform.runLater(() -> eventLog.add(0, e))
         );
     }
